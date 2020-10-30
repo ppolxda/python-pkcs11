@@ -1,0 +1,121 @@
+version: 1.1.0.build v{build}
+skip_tags: true
+init:
+- cmd: ECHO Python %PYTHON_VERSION% (%PYTHON_ARCH%bit) from %PYTHON%
+environment:
+  VCPKG_PATH: C:/tools/vcpkg/installed
+  matrix:
+  - platform: x86
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python35
+    PYTHON_VERSION: 3.5.x
+    PYTHON_ARCH: 32
+    MSVC_VERSION: Visual Studio 15
+  - platform: x64
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python35-x64
+    PYTHON_VERSION: 3.5.x
+    PYTHON_ARCH: 64
+    MSVC_VERSION: Visual Studio 15 Win64
+  - platform: x86
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python36
+    PYTHON_VERSION: 3.6.x
+    PYTHON_ARCH: 32
+    MSVC_VERSION: Visual Studio 15
+  - platform: x64
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python36-x64
+    PYTHON_VERSION: 3.6.x
+    PYTHON_ARCH: 64
+    MSVC_VERSION: Visual Studio 15 Win64
+  - platform: x86
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python37
+    PYTHON_VERSION: 3.7.x
+    PYTHON_ARCH: 32
+    MSVC_VERSION: Visual Studio 15
+  - platform: x64
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python37-x64
+    PYTHON_VERSION: 3.7.x
+    PYTHON_ARCH: 64
+    MSVC_VERSION: Visual Studio 15 Win64
+  - platform: x86
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python38
+    PYTHON_VERSION: 3.8.x
+    PYTHON_ARCH: 32
+    MSVC_VERSION: Visual Studio 15
+  - platform: x64
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    PYTHON: C:\\Python38-x64
+    PYTHON_VERSION: 3.8.x
+    PYTHON_ARCH: 64
+    MSVC_VERSION: Visual Studio 15
+install:
+- cmd: >-
+    REM  ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+    ECHO "Filesystem root:"
+
+    REM  stdint for vc9
+
+    REM  https://github.com/tango-controls/zmq-windows-ci/blob/master/appveyor.yml
+
+    REM  appveyor DownloadFile https://raw.githubusercontent.com/mattn/gntp-send/master/include/msinttypes/stdint.h
+
+    REM  cmd: copy stdint.h "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include"
+
+    REM  Update Python PATH of this build (so pip is available, this cannot be
+
+    REM  done from inside the powershell script as it would require to restart
+
+    REM  the parent CMD process).
+
+    SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
+
+    python --version
+
+    REM  for /f %%i in ('which vcpkg') do set VCPKG_PATH=%%i/installed
+
+    if "%PLATFORM%" == "x64" set VCPKG_SYS_PATH=x64-windows
+
+    if "%PLATFORM%" == "x86" set VCPKG_SYS_PATH=x86-windows
+
+    echo "%VCPKG_PATH%/%VCPKG_SYS_PATH%/include"
+
+    echo "%VCPKG_PATH%/%VCPKG_SYS_PATH%/lib"
+
+    REM  Upgrade to the latest version of pip to avoid it displaying warnings
+
+    REM  about it being out of date.
+
+    python -m pip install pip -U
+
+    REM  Install twine, support for 'bdist_wheel' and update setuptools.
+
+    python -m pip install --upgrade wheel setuptools twine pytest
+
+    python -m pip install -r dev-requirements.txt
+build_script:
+- cmd: >-
+    echo "%VCPKG_PATH%/%VCPKG_SYS_PATH%/include"
+    
+    echo "%VCPKG_PATH%/%VCPKG_SYS_PATH%/lib"
+
+    python setup.py build_ext --include-dirs=%VCPKG_PATH%/%VCPKG_SYS_PATH%/include --library-dirs=%VCPKG_PATH%/%VCPKG_SYS_PATH%/lib
+
+    python setup.py install
+after_test:
+- cmd: python setup.py bdist_wheel
+artifacts:
+- path: dist\*.whl
+deploy:
+- provider: GitHub
+  release: $(appveyor_build_version)-win
+  description: $(appveyor_build_version)-win
+  auth_token:
+    secure: f7657a1db0180dbada081cb371e92c59a351222d
+  prerelease: true
+  force_update: true
