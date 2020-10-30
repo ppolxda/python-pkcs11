@@ -116,6 +116,6 @@ deploy:
   release: $(appveyor_build_version)-win
   description: $(appveyor_build_version)-win
   auth_token:
-    secure: f7657a1db0180dbada081cb371e92c59a351222d
+    secure: d7VfVCg/bMY7PAj5UIz4hVumECHGKnAtRXzGIL3OzCWgWQRtkBKzy0n1kBuBjKfp
   prerelease: true
   force_update: true
